@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BroCast | Reality Forecast</title>
+    <meta name="description" content="BroCast — A premium internet joke disguised as a weather application. Emotional accuracy over weather accuracy.">
+    <!-- Premium Font: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Image Generation (Native Browser Renderer) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app-container">
+        <!-- Dynamic Background -->
+        <div id="background-layer"></div>
+        <div id="dynamic-graphics-layer"></div>
+        <div id="heat-distortion-layer"></div>
+        <div id="edge-blur"></div>
+
+        <main id="capture-area">
+            <!-- Share Overlay Title (visible only during capture) -->
+            <div id="share-title" style="display: none;">
+                <h4 id="share-title-text">BroCast Report</h4>
+            </div>
+
+            <!-- === HEADER: Location + Search === -->
+            <header>
+                <!-- Default state: Location display -->
+                <button class="location-bar" id="location-btn" aria-label="Search location">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span id="location-name">Locating You...</span>
+                    <svg class="location-search-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </button>
+
+                <!-- Search state: Input + Dropdown -->
+                <div id="search-overlay" class="search-overlay hidden">
+                    <div class="search-input-row">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        <input id="search-input" type="text" placeholder="Search city..." autocomplete="off" spellcheck="false">
+                        <button id="search-close" aria-label="Close search" class="search-close-btn">&times;</button>
+                    </div>
+                    <div id="search-dropdown" class="search-dropdown hidden">
+                        <div id="recent-section"></div>
+                        <div id="results-section"></div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- === HERO SECTION (Sacred Order) === -->
+            <section class="hero">
+                <!-- 1. Feels Like Temperature (massive) -->
+                <div class="temp-wrapper">
+                    <span class="feels-like-label">FEELS LIKE</span>
+                    <h1 id="hero-temp">--°</h1>
+                </div>
+
+                <!-- 2. Roast Comment (BIGGEST text after temp — dominates) -->
+                <div class="joke-container">
+                    <h2 id="main-joke">Measuring atmospheric suffering...</h2>
+                </div>
+
+                <!-- 3. Touch Grass Difficulty -->
+                <div class="difficulty-block">
+                    <span class="difficulty-label-text">TOUCH GRASS DIFFICULTY</span>
+                    <div class="difficulty-row">
+                        <span class="difficulty-score" id="difficulty-value">--/100</span>
+                        <span class="difficulty-dot">·</span>
+                        <span class="difficulty-word" id="difficulty-label">--</span>
+                    </div>
+                </div>
+
+                <!-- 4. Today's Verdict -->
+                <div class="verdict-container">
+                    <span class="verdict-label">Today's Verdict:</span>
+                    <p id="daily-verdict">Stand by.</p>
+                </div>
+
+                <!-- 5. Daily Record (from forecast, small) -->
+                <p id="daily-record" class="daily-record"></p>
+            </section>
+
+            <!-- === FOOTER === -->
+            <footer>
+                <!-- Weather Alert (conditional) -->
+                <div id="weather-alert" class="weather-alert hidden">
+                    <span class="alert-icon">⚠️</span>
+                    <span id="alert-text"></span>
+                </div>
+
+                <!-- Achievement (small, supporting role) -->
+                <div class="achievement-banner" id="achievement-banner">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ach-icon"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>
+                    <div class="ach-text">
+                        <span class="ach-title">Achievement Unlocked</span>
+                        <span class="ach-value" id="achievement-value">Waiting for data</span>
+                    </div>
+                </div>
+
+                <!-- Primary Stats (4 only) -->
+                <div class="primary-stats">
+                    <div class="stat">
+                        <span class="stat-label">Air Temp</span>
+                        <span class="stat-val" id="air-temp-val">--°C</span>
+                    </div>
+                    <div class="stat" id="scooter-container">
+                        <span class="stat-label">Scooter Seat</span>
+                        <span class="stat-val" id="scooter-val">--</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Humidity</span>
+                        <span class="stat-val" id="humidity-val">--%</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">AQI</span>
+                        <span class="stat-val" id="aqi-val">--</span>
+                    </div>
+                </div>
+
+                <!-- More Details (expandable) -->
+                <div id="more-details-wrapper">
+                    <button id="more-details-btn" class="more-details-btn">
+                        <span>More Details</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
+                    <div id="more-details" class="more-details hidden">
+                        <div class="stat">
+                            <span class="stat-label">UV Index</span>
+                            <span class="stat-val" id="uv-val">--</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Wind</span>
+                            <span class="stat-val" id="wind-val">-- km/h</span>
+                        </div>
+                        <div class="stat" id="rain-container" style="display: none;">
+                            <span class="stat-label">Rain</span>
+                            <span class="stat-val" id="rain-val">-- mm</span>
+                        </div>
+                        <div class="stat" id="sunrise-container">
+                            <span class="stat-label">Sunrise</span>
+                            <span class="stat-val" id="sunrise-val">--</span>
+                        </div>
+                        <div class="stat" id="sunset-container">
+                            <span class="stat-label">Sunset</span>
+                            <span class="stat-val" id="sunset-val">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: Actions -->
+                <div class="footer-bottom-row" data-html2canvas-ignore="true">
+                    <div class="action-buttons">
+                        <button id="share-btn" aria-label="Share">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Share Branding (visible only during capture) -->
+                <div id="share-branding" style="display: none;">
+                    <span>brocast.app</span>
+                </div>
+
+                <!-- Footer Tagline -->
+                <p id="footer-tagline" class="footer-tagline">Forecast by WeatherAPI. Judgment by BroCast. Build with <a href="https://rereal.framer.ai" target="_blank" rel="noopener">REREAL</a></p>
+            </footer>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay">
+            <div class="spinner"></div>
+            <p id="loading-msg">Consulting the heavens...</p>
+        </div>
+
+        <!-- Toast Notification -->
+        <div id="toast" class="toast">Copied to clipboard!</div>
+    </div>
+
+    <!-- Engine & App Logic -->
+    <script src="js/weather-engine.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
