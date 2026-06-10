@@ -161,6 +161,23 @@ function setupLocationSearch() {
     const searchInput = document.getElementById('search-input');
     const searchClose = document.getElementById('search-close');
     const searchDropdown = document.getElementById('search-dropdown');
+    const liveLocationBtn = document.getElementById('live-location-btn');
+
+    // Live location
+    if (liveLocationBtn) {
+        liveLocationBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeSearch();
+            
+            // Show loading
+            const overlay = document.getElementById('loading-overlay');
+            overlay.style.display = 'flex';
+            overlay.style.opacity = '1';
+            document.getElementById('loading-msg').textContent = "Calibrating GPS satellites...";
+            
+            detectLocation();
+        });
+    }
 
     // Open search
     locationBtn.addEventListener('click', (e) => {
@@ -211,6 +228,10 @@ function openSearch() {
     searchOpen = true;
     locationBtn.style.display = 'none';
     searchOverlay.classList.remove('hidden');
+    document.getElementById('search-backdrop').classList.remove('hidden');
+    // Force reflow
+    document.getElementById('search-backdrop').offsetHeight;
+    document.getElementById('search-backdrop').classList.add('active');
     searchInput.value = '';
     searchInput.focus();
 
@@ -228,6 +249,10 @@ function closeSearch() {
     locationBtn.style.display = '';
     searchOverlay.classList.add('hidden');
     searchDropdown.classList.add('hidden');
+    document.getElementById('search-backdrop').classList.remove('active');
+    setTimeout(() => {
+        if (!searchOpen) document.getElementById('search-backdrop').classList.add('hidden');
+    }, 300);
     clearTimeout(debounceTimer);
 }
 
@@ -235,20 +260,24 @@ async function searchAutocomplete(query) {
     const resultsSection = document.getElementById('results-section');
 
     try {
-        const res = await fetch(`https://brocast-api.happysmile123444.workers.dev/?type=search&q=${query}`);
-        const json = await res.json();
-        const results = json.data || json;
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&addressdetails=1&limit=5`);
+        const results = await res.json();
 
         if (!Array.isArray(results) || !results.length) {
             resultsSection.innerHTML = `<div class="search-item"><span class="item-name" style="color: var(--text-tertiary);">No results found</span></div>`;
             return;
         }
 
-        resultsSection.innerHTML = results.slice(0, 5).map(r => {
-            const region = [r.region, r.country].filter(Boolean).join(', ');
-            return `<button class="search-item" data-query="${r.name}" data-name="${r.name}">
+        resultsSection.innerHTML = results.map(r => {
+            const mainName = r.name || r.display_name.split(',')[0];
+            const parts = r.display_name.split(',').map(s => s.trim());
+            parts.shift(); // Remove mainName
+            const region = parts.slice(0, 2).join(', '); // Keep up to 2 region elements
+            const queryStr = `${r.lat},${r.lon}`; // Pass coordinates
+
+            return `<button class="search-item" data-query="${queryStr}" data-name="${mainName}">
                         <span class="item-icon">📍</span>
-                        <span class="item-name">${r.name}</span>
+                        <span class="item-name">${mainName}</span>
                         <span class="item-region">${region}</span>
                     </button>`;
         }).join('');
@@ -276,26 +305,49 @@ function renderRecentLocations() {
     resultsSection.innerHTML = '';
 
     if (!recents.length) {
-        recentSection.innerHTML = `<div class="search-item"><span class="item-name" style="color: var(--text-tertiary);">Type to search cities...</span></div>`;
+        recentSection.innerHTML = `<div class="search-item" style="pointer-events: none;"><span class="item-name" style="color: var(--text-tertiary);">Type to search cities...</span></div>`;
         return;
     }
 
     recentSection.innerHTML = `
-        <div class="search-section-title">Recent</div>
+        <div class="search-section-header">
+            <div class="search-section-title">Recent</div>
+            <button class="clear-history-btn">Clear All</button>
+        </div>
         ${recents.map(r => `
-            <button class="search-item" data-query="${r.query}" data-name="${r.name}">
-                <span class="item-icon">🕐</span>
-                <span class="item-name">${r.name}</span>
-            </button>
+            <div class="search-item-wrapper">
+                <button class="search-item recent-search-item" data-query="${r.query}" data-name="${r.name}">
+                    <span class="item-icon">🕐</span>
+                    <span class="item-name">${r.name}</span>
+                </button>
+                <button class="delete-recent-btn" data-name="${r.name}" aria-label="Delete recent search">&times;</button>
+            </div>
         `).join('')}
         <div class="search-divider"></div>
     `;
 
-    recentSection.querySelectorAll('.search-item').forEach(item => {
+    recentSection.querySelectorAll('.recent-search-item').forEach(item => {
         item.addEventListener('click', () => {
             selectLocation(item.dataset.name, item.dataset.query);
         });
     });
+
+    recentSection.querySelectorAll('.delete-recent-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteRecentLocation(btn.dataset.name);
+            renderRecentLocations();
+        });
+    });
+
+    const clearBtn = recentSection.querySelector('.clear-history-btn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            clearAllRecentLocations();
+            renderRecentLocations();
+        });
+    }
 }
 
 function selectLocation(name, query) {
@@ -328,6 +380,16 @@ function saveRecentLocation(name, query) {
     recents.unshift({ name, query });
     recents = recents.slice(0, MAX_RECENTS);
     localStorage.setItem(RECENT_KEY, JSON.stringify(recents));
+}
+
+function deleteRecentLocation(name) {
+    let recents = getRecentLocations();
+    recents = recents.filter(r => r.name !== name);
+    localStorage.setItem(RECENT_KEY, JSON.stringify(recents));
+}
+
+function clearAllRecentLocations() {
+    localStorage.removeItem(RECENT_KEY);
 }
 
 // ============================================================
