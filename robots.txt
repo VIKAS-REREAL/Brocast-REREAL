@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://vikas-rereal.github.io/Brocast-REREAL/sitemap.xml

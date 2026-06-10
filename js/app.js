@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupLocationSearch();
     setupActionButtons();
     setupMoreDetails();
+    setupLogoLightbox();
 });
 
 // ============================================================
@@ -81,6 +82,78 @@ function showLocationError(message) {
 
 let searchOpen = false;
 let debounceTimer = null;
+
+// === LOGO LIGHTBOX ===
+function setupLogoLightbox() {
+    const logo = document.querySelector('.brand-logo');
+    if (!logo) return;
+
+    let isLightbox = false;
+    let overlay = document.getElementById('logo-overlay');
+
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'logo-overlay';
+        logo.parentElement.appendChild(overlay);
+        
+        overlay.addEventListener('click', closeLightbox);
+    }
+
+    function closeLightbox() {
+        if (!isLightbox) return;
+        isLightbox = false;
+        
+        logo.classList.remove('lightbox-active');
+        logo.style.transform = 'none';
+        
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            if (!isLightbox) overlay.style.display = 'none';
+        }, 400); // match transition duration
+    }
+
+    logo.addEventListener('click', (e) => {
+        e.stopPropagation();
+        
+        if (isLightbox) {
+            closeLightbox();
+            return;
+        }
+
+        isLightbox = true;
+        
+        // Show overlay
+        overlay.style.display = 'block';
+        // Force reflow
+        overlay.offsetHeight;
+        overlay.style.opacity = '1';
+        
+        // Add class to logo
+        logo.classList.add('lightbox-active');
+        
+        // Calculate transform
+        const rect = logo.getBoundingClientRect();
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        
+        const logoCenterX = rect.left + rect.width / 2;
+        const logoCenterY = rect.top + rect.height / 2;
+        
+        const translateX = centerX - logoCenterX;
+        const translateY = centerY - logoCenterY;
+        
+        // Scale to 80% of width or max 400px
+        const targetWidth = Math.min(window.innerWidth * 0.8, 400);
+        const scale = targetWidth / rect.width;
+        
+        logo.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    });
+
+    // Close on escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeLightbox();
+    });
+}
 
 function setupLocationSearch() {
     const locationBtn = document.getElementById('location-btn');
@@ -162,10 +235,11 @@ async function searchAutocomplete(query) {
     const resultsSection = document.getElementById('results-section');
 
     try {
-        const res = await fetch(`https://brocast-api.happysmile123444.workers.dev/search?q=${query}`);
-        const results = await res.json();
+        const res = await fetch(`https://brocast-api.happysmile123444.workers.dev/?type=search&q=${query}`);
+        const json = await res.json();
+        const results = json.data || json;
 
-        if (!results.length) {
+        if (!Array.isArray(results) || !results.length) {
             resultsSection.innerHTML = `<div class="search-item"><span class="item-name" style="color: var(--text-tertiary);">No results found</span></div>`;
             return;
         }
@@ -262,14 +336,15 @@ function saveRecentLocation(name, query) {
 
 async function fetchWeather(query, retryCount = 0) {
     try {
-        const url = `https://brocast-api.happysmile123444.workers.dev/?q=${encodeURIComponent(query)}`;
+        const url = `https://brocast-api.happysmile123444.workers.dev/?type=forecast&q=${encodeURIComponent(query)}`;
         const res = await fetch(url);
 
         if (!res.ok) {
             throw new Error(`API returned ${res.status}`);
         }
 
-        const data = await res.json();
+        const json = await res.json();
+        const data = json.data || json;
 
         if (data.error) {
             throw new Error(data.error.message);

@@ -25,6 +25,14 @@
     font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+}
+
+input, textarea {
+    user-select: auto;
+    -webkit-user-select: auto;
 }
 
 html, body {
@@ -106,6 +114,39 @@ html, body {
 header {
     position: relative;
     z-index: 50;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.brand-logo {
+    height: 58px;
+    opacity: 1;
+    user-select: none;
+    cursor: zoom-in;
+    position: relative;
+    z-index: 50;
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform-origin: center center;
+    will-change: transform;
+}
+
+.brand-logo.lightbox-active {
+    cursor: zoom-out;
+    z-index: 9999;
+}
+
+#logo-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 9998;
+    opacity: 0;
+    display: none;
+    transition: opacity 0.4s ease;
+    cursor: zoom-out;
 }
 
 .location-bar {
